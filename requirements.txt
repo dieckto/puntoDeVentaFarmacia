@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+gunicorn
+sqlalchemy
+pydantic
+PyJWT
+bcrypt  # <--- Solo bcrypt

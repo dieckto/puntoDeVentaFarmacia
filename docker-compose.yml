@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: farmacia_backend_dev
+    # Mapeamos el puerto 8001 de tu compu al 8001 del contenedor
+    ports:
+      - "8001:8001"
+    # Sobreescribimos el CMD del Dockerfile para usar modo "reload" en desarrollo local
+    command: uvicorn app.__init__:app --host 0.0.0.0 --port 8001 --reload
+    volumes:
+      # Sincroniza tu código local con la carpeta /app del contenedor en tiempo real
+      - .:/app
+      # Opcional pero recomendado: Asegura que la carpeta db_data persista de forma segura
+      - ./db_data:/app/db_data
+    environment:
+      # Aquí puedes poner variables de entorno para desarrollo
+      - ENVIRONMENT=development
