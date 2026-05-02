@@ -32,3 +32,8 @@ class UserResponse(UserBase):
     
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    role: Optional[UserRole] = None
+    password: Optional[str] = None # Si envía password, lo encriptaremos

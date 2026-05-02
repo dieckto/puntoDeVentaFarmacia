@@ -6,14 +6,14 @@ from app.db.session import engine, Base, SessionLocal
 from app.db.models import User, Employee, UserRole # Importamos Empleado y el Enum de Rol
 from app.utils.auth import get_password_hash
 
-# IMPORTACIÓN DE LOS MÓDULOS (Descomenta conforme los vayas creando)
-# from app.modules.auth.router import router as auth_router
+# IMPORTACIÓN DE LOS MÓDULOS (¡Todos listos y conectados!)
+from app.modules.auth.router import router as auth_router
 from app.modules.users.router import router as users_router
-# from app.modules.customers.router import router as customers_router
-# from app.modules.inventory.router import router as inventory_router
-# from app.modules.purchases.router import router as purchases_router
-# from app.modules.sales.router import router as sales_router
-# from app.modules.reports.router import router as reports_router
+from app.modules.customers.router import router as customers_router
+from app.modules.inventory.router import router as inventory_router
+from app.modules.purchases.router import router as purchases_router
+from app.modules.sales.router import router as sales_router
+from app.modules.reports.router import router as reports_router
 
 
 # 1. Crear tablas en la base de datos si no existen
@@ -70,13 +70,13 @@ app.add_middleware(
 )
 
 # 5. Inclusión de Routers Modulares
-# app.include_router(auth_router)
+app.include_router(auth_router)
 app.include_router(users_router)
-# app.include_router(customers_router)
-# app.include_router(inventory_router)
-# app.include_router(purchases_router)
-# app.include_router(sales_router)
-# app.include_router(reports_router)
+app.include_router(customers_router)
+app.include_router(inventory_router)
+app.include_router(purchases_router)
+app.include_router(sales_router)
+app.include_router(reports_router)
 
 @app.get("/")
 def health_check():

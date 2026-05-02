@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.db.models import Employee, User
-from .schemas import EmployeeCreate, UserCreate
+from .schemas import EmployeeCreate, UserCreate, UserUpdate
 from app.utils.auth import get_password_hash
 
 # --- LÓGICA DE EMPLEADOS ---
@@ -47,3 +47,40 @@ def create_user(data: UserCreate, db: Session):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+# EDITAR USUARIO
+def update_user(db: Session, user_id: int, data: UserUpdate):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    update_data = data.model_dump(exclude_unset=True)
+    
+    # Si el admin decide cambiarle la contraseña, la volvemos a encriptar
+    if "password" in update_data:
+        update_data["password_hash"] = get_password_hash(update_data.pop("password"))
+        
+    for key, value in update_data.items():
+        setattr(user, key, value)
+        
+    db.commit()
+    db.refresh(user)
+    return user
+
+# ELIMINAR USUARIO
+def delete_user(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    try:
+        db.delete(user)
+        db.commit()
+        return {"detail": "Usuario eliminado exitosamente"}
+    except Exception as e:
+        # Si el usuario ya cobró ventas, la base de datos bloqueará el borrado por seguridad (Llave Foránea)
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail="No se puede eliminar el usuario porque tiene ventas o compras registradas. Considere desactivarlo."
+        )
