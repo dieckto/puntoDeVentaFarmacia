@@ -6,3 +6,4 @@ pydantic[email]
 PyJWT
 bcrypt  # <--- Solo bcrypt
 python-multipart
+reportlab

@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.db.models import Sale, SaleDetail, Medication, Customer
 from . import schemas
+from app.services.pdf_generator import generate_sale_ticket_pdf
+from app.services.email_sender import send_email_with_attachment
 
 def create_sale(db: Session, sale_data: schemas.SaleCreate, current_user_id: int):
     # 1. Validar que la lista de items no esté vacía
@@ -49,13 +51,20 @@ def create_sale(db: Session, sale_data: schemas.SaleCreate, current_user_id: int
         if total_amount < 0:
             total_amount = 0
 
-    # 4. ACTUALIZAR PUNTOS DEL CLIENTE (Proceso de tu Diagrama 5)
+    # 4. ACTUALIZAR PUNTOS DEL CLIENTE Y REDIMIR SI APLICA
     if sale_data.customer_id:
         customer = db.query(Customer).filter(Customer.id == sale_data.customer_id, Customer.is_active == True).first()
         if customer:
-            # Ejemplo: Otorgamos 1 punto por cada $10 gastados
-            puntos_ganados = total_amount / 10.0
-            customer.points += puntos_ganados
+            # Mecánica: Cada compra mayor a $100 acumula 10 puntos
+            if total_amount > 100:
+                puntos_ganados = 10.0
+                customer.points += puntos_ganados
+            
+            # Si alcanza o supera 50 puntos, redimir 10% de la compra actual y descontar 50 puntos
+            if customer.points >= 50:
+                descuento_redencion = total_amount * 0.10  # 10% del total de la compra
+                total_amount -= descuento_redencion
+                customer.points -= 50.0
 
     # 5. Guardar la Venta (Cabecera)
     db_sale = Sale(
@@ -76,6 +85,21 @@ def create_sale(db: Session, sale_data: schemas.SaleCreate, current_user_id: int
     # 7. COMMIT FINAL: Si algo falló arriba, nada de esto se guarda (Transacción segura)
     db.commit()
     db.refresh(db_sale)
+    
+    # 8. ENVIAR TICKET POR EMAIL AL CLIENTE
+    if db_sale.customer and db_sale.customer.email:
+        try:
+            pdf_buffer = generate_sale_ticket_pdf(db_sale)
+            send_email_with_attachment(
+                to_email=db_sale.customer.email,
+                subject=f"Ticket de Venta #{db_sale.id} - Farmacia POS",
+                body="Adjunto el ticket de su compra. Gracias por su preferencia.",
+                attachment_buffer=pdf_buffer,
+                attachment_filename=f"ticket_venta_{db_sale.id}.pdf"
+            )
+        except Exception as e:
+            # Loggear error pero no fallar la venta
+            print(f"Error enviando email: {e}")
     
     return db_sale
 
