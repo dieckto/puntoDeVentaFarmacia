@@ -5,7 +5,7 @@ from typing import List
 
 from app.utils.db import get_db
 from app.utils.auth import verify_token
-from . import schemas, services
+from . import schemas, service
 
 router = APIRouter(
     prefix="/suppliers", 

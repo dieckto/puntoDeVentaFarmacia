@@ -5,12 +5,14 @@ from app.db.models import Purchase, PurchaseDetail, Medication
 from . import schemas
 
 # REGISTRAR COMPRA
+# Modificación para asegurar que las compras se reflejen en el inventario
+
 def create_purchase(db: Session, purchase_data: schemas.PurchaseCreate, current_user_id: int):
     if not purchase_data.items:
         raise HTTPException(status_code=400, detail="La compra no puede estar vacía")
 
     total_amount = 0.0
-    purchase_details_db =[]
+    purchase_details_db = []
 
     # Procesar cada artículo recibido del proveedor
     for item in purchase_data.items:
@@ -20,9 +22,8 @@ def create_purchase(db: Session, purchase_data: schemas.PurchaseCreate, current_
 
         # 1. PROCESO AUTOMÁTICO: Actualizar Stock (Suma)
         med.stock += item.quantity
-        
+
         # 2. PROCESO AUTOMÁTICO: Actualizar Precio (Costo de compra)
-        # Tu diagrama 6 lo menciona explícitamente. Si el proveedor subió el precio, lo actualizamos.
         med.price_buy = item.unit_cost
 
         subtotal = item.unit_cost * item.quantity
@@ -36,6 +37,9 @@ def create_purchase(db: Session, purchase_data: schemas.PurchaseCreate, current_
                 subtotal=subtotal
             )
         )
+
+        # Guardar los cambios en el inventario inmediatamente
+        db.add(med)
 
     # Crear la cabecera de la compra
     db_purchase = Purchase(

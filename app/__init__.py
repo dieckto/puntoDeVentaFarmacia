@@ -14,6 +14,7 @@ from app.modules.inventory.router import router as inventory_router
 from app.modules.purchases.router import router as purchases_router
 from app.modules.sales.router import router as sales_router
 from app.modules.reports.router import router as reports_router
+from app.modules.suplliers.router import router as suppliers_router
 
 
 # 1. Crear tablas en la base de datos si no existen
@@ -77,6 +78,7 @@ app.include_router(inventory_router)
 app.include_router(purchases_router)
 app.include_router(sales_router)
 app.include_router(reports_router)
+app.include_router(suppliers_router)
 
 @app.get("/")
 def health_check():
